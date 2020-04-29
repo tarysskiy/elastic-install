@@ -1,0 +1,9 @@
+---
+- name: "Check install prometheus plugins"
+  stat: path=/usr/share/elasticsearch/plugins/prometheus-exporter
+  register: installed_plugins
+
+- name: "Install prometheus plugins"
+  become: yes
+  command: "/usr/share/elasticsearch/bin/elasticsearch-plugin install -b {{ elastic_prometheus_plugin }}"
+  when: installed_plugins.stat.exists == False

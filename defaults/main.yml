@@ -1,0 +1,61 @@
+---
+elastic_version: "7.4.1"  
+#elastic_version: "6.2.3"
+#elastic_version: "6.2.2"
+
+java_version: "{%- if elastic_version is version_compare('7.0.0', '<') -%} java-1.8.0-openjdk {%- else -%} java-11-openjdk.x86_64 {%- endif %}"
+
+elasticsearch_7_repo: "https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{{ elastic_version }}-x86_64.rpm"
+elasticsearch_6_repo: "https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{{ elastic_version }}.rpm" 
+
+elasticsearch_repo: "{{ elasticsearch_6_repo if elastic_version is version_compare('7.0.0', '<') else elasticsearch_7_repo }}"
+
+elastic_cluster_name: "elasticsearch"
+
+elastic_node_name: "{{ inventory_hostname }}"
+
+elastic_path_data: /var/lib/elasticsearch
+
+elastic_path_logs: /var/log/elasticsearch
+
+elastic_min_master_nodes: 1
+
+elastic_xms: "1g"
+
+elastic_xmx: "1g"
+
+elastic_6_prometheus_plugin: "https://github.com/vvanholl/elasticsearch-prometheus-exporter/releases/download/{{ elastic_version }}.0/prometheus-exporter-{{ elastic_version }}.0.zip"
+elastic_7_prometheus_plugin: "https://github.com/vvanholl/elasticsearch-prometheus-exporter/releases/download/{{ elastic_version }}.0/prometheus-exporter-{{ elastic_version }}.0.zip"
+elastic_prometheus_plugin: "{{ elastic_6_prometheus_plugin if elastic_version is version_compare('7.0.0', '<') else elastic_7_prometheus_plugin }}"
+
+bootstrap_memory_lock: "true"
+
+elastic_http_port: 9200
+
+elastic_transport_tcp_port: 9300
+
+elastic_node_data: "true"
+elastic_node_ingest: "false"
+elastic_node_master: "true" 
+elastic_node_ml: "false"
+
+elastic_zen_ping_unicast_hosts:
+- "{{ inventory_hostname }}"
+
+install_prometheus_plugin: 1
+
+elasticsearch_service_file:
+- src: "elasticsearch.service.j2"
+  dest: /usr/lib/systemd/system/elasticsearch.service
+
+elastic_limits_templates: 
+- src: "elastic-limits.conf.j2"
+  dest: /etc/security/limits.d/elastic-limits.conf
+
+elastic_conf_templates:
+- src: "elasticsearch.yml.j2"
+  dest: /etc/elasticsearch/elasticsearch.yml 
+
+jvm_conf_templates:
+- src: "jvm.options.j2"
+  dest: /etc/elasticsearch/jvm.options 

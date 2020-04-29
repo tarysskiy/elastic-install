@@ -1,0 +1,65 @@
+---
+- name: Include global vars
+  include_vars:
+    dir: "{{ elastic_global_path }}"
+    extensions:
+    - yml
+  when: global_path.stat.isdir is defined and global_path.stat.isdir
+
+- name: "Disable swap"
+  block:
+    - name: "Swapoff"
+      shell: "swapoff -a"
+
+    - name: "Disable SWAP in fstab"
+      replace:
+        path: "/etc/fstab"
+        regexp: '^(\s*)([^#\n]+\s+)(\w+\s+)swap(\s+.*)$'
+        replace: '# \1'  
+  when: ansible_swaptotal_mb|int > 0  
+  
+- name: "Install java"
+  yum:
+    name: "{{ java_version }}"
+    state: present    
+
+- name: "Install Elasticsearch"
+  yum:
+    name: "{{ elasticsearch_repo }}"
+    state: present
+    validate_certs: false
+
+- name: "Copy Elasticsearch service file"
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+  loop: "{{ elasticsearch_service_file }}"
+
+- name: "set limits"
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+  loop: "{{ elastic_limits_templates }}"  
+
+- name: "deploy config"
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+  loop: "{{ elastic_conf_templates }}"  
+
+- name: "Copy jvm options"
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+  loop: "{{ jvm_conf_templates }}"  
+
+- name: "Install prometheus plugin"
+  include: prometheus_plugin.yml
+  when: install_prometheus_plugin|int > 0
+      
+- name: "Started elasticsearch.service"
+  systemd:
+    daemon_reload: true
+    name: elasticsearch
+    state: restarted
+    enabled: yes

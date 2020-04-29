@@ -1,0 +1,66 @@
+# ---------------------------------- Cluster -----------------------------------
+#
+cluster.name: {{ elastic_cluster_name }}
+#
+# ------------------------------------ Node ------------------------------------
+#
+node.name: {{ elastic_node_name }}
+#
+# ----------------------------------- Paths ------------------------------------
+#
+path.data: {{ elastic_path_data | default("/var/lib/elasticsearch") }}
+#
+path.logs: {{ elastic_path_logs | default("/var/log/elasticsearch") }}
+#
+# ----------------------------------- Memory -----------------------------------
+#
+bootstrap.memory_lock: {{ bootstrap_memory_lock }}
+#
+# ---------------------------------- Network -----------------------------------
+#
+http.host: 0.0.0.0
+http.port: {{ elastic_http_port | default(9200) }}
+network.publish_host: {{ ansible_default_ipv4.address }}
+transport.bind_host: 0.0.0.0
+transport.tcp.port: {{ elastic_transport_tcp_port | default(9300) }}
+#
+# --------------------------------- Discovery ----------------------------------
+#
+{% if (elastic_version is version_compare('7.0.0', '<')) %}
+discovery.zen.minimum_master_nodes: {{ elastic_min_master_nodes }}
+discovery.zen.ping.unicast.hosts: {{ elastic_zen_ping_unicast_hosts }}
+{% endif %}
+{% if (elastic_version is version_compare('7.0.0', '>=')) %}
+discovery.seed_hosts:
+- {{ inventory_hostname }}
+cluster.initial_master_nodes:
+- {{ inventory_hostname }}
+{% endif %}
+#
+#----------------------------------Roles----------------------------------------
+#
+{% if elastic_node_master is defined %}
+node.master: {{ elastic_node_master }}
+{% endif %}
+{% if elastic_node_data is defined %}
+node.data: {{ elastic_node_data }}
+{% endif %}
+{% if elastic_node_ingest is defined %}
+node.ingest: {{ elastic_node_ingest }}
+{% endif %}
+{% if elastic_node.ml is defined %}
+node.ml: {{ elastic_node_ml }}
+{% endif %}
+#
+#
+# ---------------------------------- Gateway -----------------------------------
+#
+# Block initial recovery after a full cluster restart until N nodes are started:
+#
+#gateway.recover_after_nodes: 3
+#
+# ---------------------------------- Various -----------------------------------
+#
+# Require explicit names when deleting indices:
+#
+#action.destructive_requires_name: true
